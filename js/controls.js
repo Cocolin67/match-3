@@ -484,6 +484,11 @@ let controls = {
             back1: "#666666cc",
             back2: "#888888cc",
 
+            backOverride: {},
+            backOverrideAnim: {},
+            sunColor: "#ddbb00aa",
+            sunColor2: "#aa8800aa",
+
             swapPos: null,
             matches: {count: 0},
             moves: {count: -1},
@@ -1092,6 +1097,19 @@ let controls = {
 
                 this.fallCount = fallCount;
                 this.hintCooldown -= delta;
+
+                if (currentMode === "sun") {
+                    const seen = new Set();
+                    for (let id in matchTiles) {
+                        const x = (+id) % 100;
+                        const y = Math.floor((+id) / 100);
+                        const k = x + "," + y;
+                        if (!seen.has(k)) {
+                        seen.add(k);
+                        this.paintBelow(x, y);
+                        }
+                    }
+                }
             },
             makeMatch(oldPos, newPos) {
                 if (this.pauseTimer >= 0) return;
@@ -1321,6 +1339,61 @@ let controls = {
                     ctx.stroke();
                 }
             },
+            paintBelow(x, y, duration = 500) {
+                if (currentMode !== "sun") return;
+                const id = x + y * 100;
+                if (x % 2 == 0 ^ y % 2 == 0) {
+                    this.backOverride[id] = this.sunColor;
+                    this.backOverrideAnim[id] = 0;
+
+                    startAnimation((time) => {
+                        const t = clamp01(time / duration);
+
+                        // interpolation 0→1→0 (pulse)
+                        const pulse = t < 0.5
+                        ? ease.quart.out(t * 2)          // montée
+                        : ease.quart.in(2 - t * 2);      // descente
+
+                        this.backOverrideAnim[id] = pulse;
+
+                        if (t >= 1) {
+                        // option 1 : garder base
+                        // delete this.bgAnim[id];
+
+                        // option 2 : fixer en jaune à la fin
+                        this.backOverride[id] = this.sunColor;
+                        delete this.backOverrideAnim[id];
+                        return true;
+                        }
+                        return false;
+                    });
+                } else {
+                    this.backOverride[id] = this.sunColor2;
+                    this.backOverrideAnim[id] = 0;
+
+                    startAnimation((time) => {
+                        const t = clamp01(time / duration);
+
+                        // interpolation 0→1→0 (pulse)
+                        const pulse = t < 0.5
+                        ? ease.quart.out(t * 2)          // montée
+                        : ease.quart.in(2 - t * 2);      // descente
+
+                        this.backOverrideAnim[id] = pulse;
+
+                        if (t >= 1) {
+                        // option 1 : garder base
+                        // delete this.bgAnim[id];
+
+                        // option 2 : fixer en jaune à la fin
+                        this.backOverride[id] = this.sunColor2;
+                        delete this.backOverrideAnim[id];
+                        return true;
+                        }
+                        return false;
+                    });
+                }
+            },
             render() {
                 let size = Math.min(this.rect.width / this.board.width, this.rect.height / this.board.height);
                 let colors = ["#ff0000", "#49e400", "#0065eb", "#ff00e4", "#fb5500", "#eecb00", "#fff7ea"];
@@ -1328,13 +1401,23 @@ let controls = {
                 // Background
                 for (let x = 0; x < this.board.width; x++) {
                     for (let y = 0; y < this.board.height; y++) {
-                        ctx.fillStyle = (x + y) % 2 ? this.back2 : this.back1;
+                        const id = x + y * 100;
+                        const base = (x + y) % 2 ? this.back2 : this.back1;
+                        const fill = this.backOverride[id] ?? base;
+                        ctx.fillStyle = fill;
                         ctx.fillRect(
                             this.rect.x + size * x, 
                             this.rect.y + size * y, 
                             size, 
                             size, 
                         );
+
+                        if (this.backOverrideAnim[id] !== undefined) {
+                            ctx.globalAlpha = this.backOverrideAnim[id];
+                            ctx.fillStyle = this.sunColor;
+                            ctx.fillRect(this.rect.x + size * x, this.rect.y + size * y, size, size);
+                            ctx.globalAlpha = 1;
+                        }
                     }
                 }
 
@@ -1733,6 +1816,7 @@ let controls = {
                     exp: this.exp,
                     data: this.data,
                     board: "",
+                    backOverride: "",
                 }
 
                 let powers = {
@@ -1752,6 +1836,15 @@ let controls = {
                         if (tile.power == "countdown") data.board += tile.countdown.toString(36).padStart(2, "0");
                     }
                 }
+
+                if (this.backOverride && Object.keys(this.backOverride).length) {
+                    data.backOverride = Object.entries(this.backOverride)
+                        .map(([id, col]) => Number(id).toString(36) + ":" + col)
+                        .join(";");
+                } else {
+                    data.backOverride = ""; // rien à sauvegarder
+                }
+
                 game.boards[currentMode] = data;
                 save();
             },
@@ -1786,6 +1879,18 @@ let controls = {
                             tile.countdown = parseInt(data.board[p] + data.board[p + 1], 36);
                             p += 2;
                         }
+                    }
+                }
+
+                this.backOverride = {};
+                if (data.backOverride) {
+                    // data.backOverride = "idBase36:color;idBase36:color;..."
+                    for (const pair of data.backOverride.split(";")) {
+                        if (!pair) continue;
+                        const [id36, col] = pair.split(":");
+                        if (!id36 || !col) continue;
+                        const id = parseInt(id36, 36);
+                        if (!Number.isNaN(id)) this.backOverride[id] = col;
                     }
                 }
             },

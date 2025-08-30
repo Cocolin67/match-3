@@ -75,7 +75,7 @@ screens.main = function () {
 
     makeModeButton("classic",     "CLASSIC",    Ex(-125, -125));
     makeModeButton("speed",       "SPEED",      Ex(125, -125));
-    makeModeButton("?????",       "?????",      Ex(0, 0));
+    makeModeButton("sun",       "SUN",      Ex(0, 0));
     makeModeButton("action",      "ACTION",     Ex(-125, 125));
     makeModeButton("endless",     "ENDLESS",    Ex(125, 125));
     
