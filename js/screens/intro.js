@@ -20,9 +20,9 @@ screens.intro = function () {
     }), "action")
 
     scene.append(controls.label({
-        position: Ex(0, -60, 50, 100),
+        position: Ex(0, -70, 50, 100),
         scale: 15,
-        text: "Version " + version + "\nGame created by ducdat0507",
+        text: "Version " + version + "\nGame created by ducdat0507 \nNew sunny mode by Xupix",
         style: "italic",
         alpha: 0,
     }), "info")
@@ -35,7 +35,7 @@ screens.intro = function () {
         onpointerdown () {
             if (!isAnimating) {
                 isAnimating = true;
-                startAnimation(outtro);
+                startAnimation(outro);
             }
         },
         onupdate() {
@@ -56,7 +56,7 @@ screens.intro = function () {
         return x >= 1000;
     });
 
-    function outtro(x) {
+    function outro(x) {
         scene.$title.position.ex = 50 + ease.quart.in(x / 1000) * 100;
         scene.$action.position.ex = 50 - ease.quart.in(x / 1000) * 100;
         scene.$action.alpha = Math.cos(x / 20) / 2 + .5;

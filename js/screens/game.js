@@ -48,6 +48,10 @@ screens.game = function () {
             scene.$multibox.$text.text = scene.$board.data.level > 1n ? scene.$board.data.level.toLocaleString("en-US") + "x" : "";
             scene.$board.scoreMulti = 5n * scene.$board.data.level;
         }
+    } else if (currentMode == "sun") {
+        onupdate = () => {
+            scene.$board.scoreMulti = scene.$board.data.level;
+        }
     }
 
     // The Score
@@ -183,6 +187,19 @@ screens.game = function () {
                 let time = Math.max(scene.$board.data.time, 0)
                 scene.$level.text = Math.floor(time / 60) + ":" + Math.floor(time % 60).toFixed(0).padStart(2, "0");
                 scene.$progress.progress = (scene.$board.data.time / 300);
+            } else if (currentMode == "sun") {
+                scene.$level.text = "Level " + scene.$board.data.level.toLocaleString("en-US");
+
+                const b = scene.$board;
+                const total = b.board.width * b.board.height;
+                const lit = b.backOverride ? Object.keys(b.backOverride).length : 0;
+                const target = Math.min(1, lit / total);
+
+                if (lit === total) {
+                    scene.$progress.progress = 1;
+                } else {
+                    scene.$progress.progress += (target - scene.$progress.progress) * (1 - 0.01 ** (delta / 1000));
+                }
             } else {
                 scene.$level.text = "Level " + scene.$board.data.level.toLocaleString("en-US");
                 scene.$progress.progress += (Number(scene.$board.exp) / goal - scene.$progress.progress) * (1 - 0.01 ** (delta / 1000));
@@ -233,6 +250,9 @@ screens.game = function () {
                     if (!isAnimating && Number(scene.$board.exp) >= goal) {
                         isAnimating = true;
                         levelUp();
+                    } else if (currentMode == "sun" && scene.$progress.progress >= 1) {
+                        isAnimating = true;
+                        levelUp("FULL LIGHT");
                     } else if (scene.$board.moves.count == 0) {
                         if (currentMode == "classic") {
                             splash("NO MORE MOVES");
@@ -328,7 +348,7 @@ screens.game = function () {
         startAnimation(anim1);
     }
 
-    function levelUp() {
+    function levelUp(splashtext = "LEVEL COMPLETED") {
         function anim1(x) {
             introFactor = ease.quart.in(clamp01((x - 1000) / 1000));
             if (x >= 2500) {
@@ -364,7 +384,7 @@ screens.game = function () {
         isAnimating = true;
 
         scene.$board.clickthrough = true;
-        splash("LEVEL COMPLETED");
+        splash(splashtext);
         startAnimation(anim1);
     }
 

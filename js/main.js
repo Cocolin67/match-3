@@ -1,7 +1,8 @@
 let mainCanvas
 let ctx;
 
-let version = "0.3.1";
+//let version = "0.3.1";
+let version = "INDEV";
 let versionIndex = 4;
 
 function init() {
