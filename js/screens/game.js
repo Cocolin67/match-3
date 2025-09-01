@@ -370,6 +370,10 @@ screens.game = function () {
                 });
                 scene.$board.exp = 0n;
                 scene.$board.speed = 0.25;
+
+                if (currentMode == "sun") {
+                    scene.$board.backOverride = {};
+                }
                 
                 let board = scene.$board.board;
                 board.scramble();
